@@ -70,6 +70,37 @@ def load_data():
 
 df = load_data()
 
+# ------------------ ADD INCOME ------------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.subheader("💰 Add Income")
+
+inc_col1, inc_col2 = st.columns(2)
+
+with st.form("income_form"):
+    with inc_col1:
+        inc_amount = st.number_input("Income Amount (₹)", min_value=0.0, step=100.0)
+        
+        
+    with inc_col2:
+        inc_description = st.text_input("Source")
+        inc_date = st.date_input("Income Date", value=date.today(), key="inc_date")
+
+    inc_submitted = st.form_submit_button("Add Income")
+
+if inc_submitted:
+    
+    collection.insert_one({
+        "amount": inc_amount,
+        "category": "Income", 
+        "description": inc_description,
+        "date": str(inc_date)
+    })
+
+    st.toast("💸 Income added successfully!")
+    st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 # ------------------ ADD EXPENSE ------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("➕ Add New Expense")
@@ -149,48 +180,56 @@ else:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ------------------ INSIGHTS ------------------
+# ------------------ INSIGHTS (Only for Expenses) ------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown("## 📊 Insights")
+st.markdown("## 📊 Expense Insights")
 
 if not df.empty:
-    total = df["amount"].sum()
+    # --- YAHAN FILTER LAGAYENGE ---
+    # Hum ek naya dataframe bana rahe hain jisme 'Income' category nahi hogi
+    expense_only_df = df[df["category"] != "Income"]
+    
+    if not expense_only_df.empty:
+        total_expense = expense_only_df["amount"].sum()
 
-    col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric("💰 Total Spending", f"₹ {total}")
+        with col1:
+            st.metric("💰 Total Spending", f"₹ {total_expense}")
 
-    with col2:
-        top_category = df.groupby("category")["amount"].sum().idxmax()
-        st.metric("🔥 Top Category", top_category)
+        with col2:
+            top_category = expense_only_df.groupby("category")["amount"].sum().idxmax()
+            st.metric("🔥 Top Category", top_category)
 
-    with col3:
-        st.metric("📊 Total Entries", len(df))
+        with col3:
+            st.metric("📊 Expense Entries", len(expense_only_df))
 
-    st.divider()
+        st.divider()
 
-    # Category chart
-    st.markdown("### 📊 Category Breakdown")
-    category_summary = df.groupby("category")["amount"].sum()
-    st.bar_chart(category_summary)
+        # Category chart (Ab isme Income nahi dikhega)
+        st.markdown("### 📊 Category Breakdown")
+        category_summary = expense_only_df.groupby("category")["amount"].sum()
+        st.bar_chart(category_summary)
 
-    # Highest expense
-    highest = df.loc[df["amount"].idxmax()]
-    st.error(
-        f"⚠️ Highest expense: ₹{highest['amount']} on {highest['category']} ({highest['description']})"
-    )
+        # Highest expense
+        highest = expense_only_df.loc[expense_only_df["amount"].idxmax()]
+        st.error(
+            f"⚠️ Highest expense: ₹{highest['amount']} on {highest['category']} ({highest['description']})"
+        )
 
-    # Weekly trend
-    st.markdown("### 📉 Weekly Trend")
-    weekly = df.groupby(df["date"].dt.to_period("W"))["amount"].sum()
-    weekly.index = weekly.index.astype(str)
-    st.line_chart(weekly)
+        # Weekly trend (Sirf expenses ka)
+        st.markdown("### 📉 Weekly Spending Trend")
+        weekly = expense_only_df.groupby(expense_only_df["date"].dt.to_period("W"))["amount"].sum()
+        weekly.index = weekly.index.astype(str)
+        st.line_chart(weekly)
 
-    # Monthly trend
-    st.markdown("### 📆 Monthly Trend")
-    monthly = df.groupby(df["date"].dt.to_period("M"))["amount"].sum()
-    monthly.index = monthly.index.astype(str)
-    st.line_chart(monthly)
+        # Monthly trend (Sirf expenses ka)
+        st.markdown("### 📆 Monthly Spending Trend")
+        monthly = expense_only_df.groupby(expense_only_df["date"].dt.to_period("M"))["amount"].sum()
+        monthly.index = monthly.index.astype(str)
+        st.line_chart(monthly)
+    else:
+        st.info("No expense data available (Only income records found).")
 
 else:
     st.info("Add expenses to see insights")
