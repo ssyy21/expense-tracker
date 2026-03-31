@@ -179,14 +179,11 @@ else:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ------------------ INSIGHTS ------------------
 # ------------------ INSIGHTS (Only for Expenses) ------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown("## 📊 Expense Insights")
 
 if not df.empty:
-    # --- YAHAN FILTER LAGAYENGE ---
-    # Hum ek naya dataframe bana rahe hain jisme 'Income' category nahi hogi
     expense_only_df = df[df["category"] != "Income"]
     
     if not expense_only_df.empty:
@@ -206,7 +203,6 @@ if not df.empty:
 
         st.divider()
 
-        # Category chart (Ab isme Income nahi dikhega)
         st.markdown("### 📊 Category Breakdown")
         category_summary = expense_only_df.groupby("category")["amount"].sum()
         st.bar_chart(category_summary)
@@ -217,13 +213,11 @@ if not df.empty:
             f"⚠️ Highest expense: ₹{highest['amount']} on {highest['category']} ({highest['description']})"
         )
 
-        # Weekly trend (Sirf expenses ka)
         st.markdown("### 📉 Weekly Spending Trend")
         weekly = expense_only_df.groupby(expense_only_df["date"].dt.to_period("W"))["amount"].sum()
         weekly.index = weekly.index.astype(str)
         st.line_chart(weekly)
 
-        # Monthly trend (Sirf expenses ka)
         st.markdown("### 📆 Monthly Spending Trend")
         monthly = expense_only_df.groupby(expense_only_df["date"].dt.to_period("M"))["amount"].sum()
         monthly.index = monthly.index.astype(str)
